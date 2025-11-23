@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Newspaper, FileCheck, BookOpen, Hash, List, Copy, CheckCircle } from 'lucide-react';
+import { Newspaper, FileCheck, BookOpen, Hash, List, Copy, CheckCircle, Sparkles, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { MathRenderer } from '@/components/MathRenderer';
 
@@ -13,7 +13,9 @@ export default function CurrentAffairs() {
   const [article, setArticle] = useState('');
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [generatedArticle, setGeneratedArticle] = useState<any>(null);
 
   const copyToClipboard = async (text: string, idx: number) => {
     try {
@@ -41,6 +43,34 @@ export default function CurrentAffairs() {
     setLoading(false);
   };
 
+  const generateRandomCurrentAffairs = async () => {
+    setGenerating(true);
+    setGeneratedArticle(null);
+    setResult(null);
+    try {
+      const response = await fetch('/api/current-affairs/generate');
+      const data = await response.json();
+      if (data.error) {
+        console.error('Error generating:', data.error);
+      } else {
+        setGeneratedArticle(data);
+        // Auto-populate the textarea
+        setArticle(data.article);
+        // Auto-process the generated article
+        const processResponse = await fetch('/api/current-affairs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ article: data.article }),
+        });
+        const processData = await processResponse.json();
+        setResult(processData);
+      }
+    } catch (error) {
+      console.error('Error generating current affairs:', error);
+    }
+    setGenerating(false);
+  };
+
   return (
     <div className="w-full max-w-full overflow-x-hidden">
       <div className="mb-6 sm:mb-8 md:mb-10">
@@ -53,12 +83,67 @@ export default function CurrentAffairs() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 sm:gap-6 md:gap-8">
+        {/* Random Generator Card */}
+        <Card className="w-full bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Generate Random Current Affairs
+            </CardTitle>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-2">
+              Get AI-generated recent current affairs topics relevant for UPSC
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button 
+              onClick={generateRandomCurrentAffairs} 
+              disabled={generating}
+              className="w-full text-sm sm:text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+              size="lg"
+            >
+              {generating ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Random Topic
+                </>
+              )}
+            </Button>
+            {generatedArticle && (
+              <div className="p-4 bg-background/50 rounded-lg border border-primary/20 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {generatedArticle.category}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">{generatedArticle.date}</span>
+                  </div>
+                </div>
+                <h3 className="font-semibold text-sm sm:text-base text-primary">
+                  {generatedArticle.title}
+                </h3>
+                <p className="text-xs text-muted-foreground line-clamp-2">
+                  {generatedArticle.article.substring(0, 150)}...
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Manual Input Card */}
         <Card className="w-full">
           <CardHeader className="pb-4">
             <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2">
               <Newspaper className="h-5 w-5 text-primary" />
               Paste Article/News
             </CardTitle>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-2">
+              Or paste your own article to process
+            </p>
           </CardHeader>
           <CardContent className="space-y-4 sm:space-y-5">
             <Textarea
@@ -67,14 +152,30 @@ export default function CurrentAffairs() {
               placeholder="Paste news article or current affairs content..."
               className="min-h-[200px] sm:min-h-[250px] text-sm sm:text-base"
             />
-            <Button 
-              onClick={processArticle} 
-              disabled={loading || !article}
-              className="w-full sm:w-auto text-sm sm:text-base"
-              size="lg"
-            >
-              {loading ? 'Processing Article...' : 'Process Article'}
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button 
+                onClick={processArticle} 
+                disabled={loading || !article}
+                className="w-full sm:w-auto text-sm sm:text-base flex-1"
+                size="lg"
+              >
+                {loading ? 'Processing Article...' : 'Process Article'}
+              </Button>
+              {article && (
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setArticle('');
+                    setResult(null);
+                    setGeneratedArticle(null);
+                  }}
+                  className="w-full sm:w-auto text-sm sm:text-base"
+                  size="lg"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
 
