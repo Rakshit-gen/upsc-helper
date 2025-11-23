@@ -54,16 +54,24 @@ export default function CurrentAffairs() {
         console.error('Error generating:', data.error);
       } else {
         setGeneratedArticle(data);
+        // Ensure article is a string, not an object
+        const articleText = typeof data.article === 'string' 
+          ? data.article 
+          : (data.article ? String(data.article) : '');
+        
         // Auto-populate the textarea
-        setArticle(data.article);
-        // Auto-process the generated article
-        const processResponse = await fetch('/api/current-affairs', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ article: data.article }),
-        });
-        const processData = await processResponse.json();
-        setResult(processData);
+        setArticle(articleText);
+        
+        // Auto-process the generated article only if we have valid text
+        if (articleText && articleText.trim()) {
+          const processResponse = await fetch('/api/current-affairs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ article: articleText }),
+          });
+          const processData = await processResponse.json();
+          setResult(processData);
+        }
       }
     } catch (error) {
       console.error('Error generating current affairs:', error);
@@ -128,30 +136,28 @@ export default function CurrentAffairs() {
                     {generatedArticle.title}
                   </h3>
                   {generatedArticle.keyPoints && generatedArticle.keyPoints.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
                       <p className="text-xs font-medium text-muted-foreground">Key Points:</p>
                       <ul className="space-y-1.5">
-                        {generatedArticle.keyPoints.slice(0, 5).map((point: string, idx: number) => (
+                        {generatedArticle.keyPoints.map((point: string, idx: number) => (
                           <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
-                            <span className="text-primary mt-1">•</span>
+                            <span className="text-primary mt-1 flex-shrink-0">•</span>
                             <span className="flex-1">{point}</span>
                           </li>
                         ))}
                       </ul>
-                      {generatedArticle.keyPoints.length > 5 && (
-                        <p className="text-xs text-muted-foreground italic">
-                          + {generatedArticle.keyPoints.length - 5} more points...
-                        </p>
-                      )}
                     </div>
                   ) : (
                     <div className="text-xs text-muted-foreground space-y-1">
-                      {generatedArticle.article.split('\n').slice(0, 3).map((line: string, idx: number) => (
-                        <p key={idx} className="flex items-start gap-2">
-                          <span className="text-primary mt-1">•</span>
-                          <span>{line.trim()}</span>
-                        </p>
-                      ))}
+                      {typeof generatedArticle.article === 'string' && generatedArticle.article
+                        ? generatedArticle.article.split('\n').slice(0, 3).map((line: string, idx: number) => (
+                            <p key={idx} className="flex items-start gap-2">
+                              <span className="text-primary mt-1">•</span>
+                              <span>{line.trim()}</span>
+                            </p>
+                          ))
+                        : <p className="text-muted-foreground">Article content will appear here...</p>
+                      }
                     </div>
                   )}
                 </CardContent>
@@ -173,7 +179,7 @@ export default function CurrentAffairs() {
           </CardHeader>
           <CardContent className="space-y-4 sm:space-y-5">
             <Textarea
-              value={article}
+              value={typeof article === 'string' ? article : String(article || '')}
               onChange={(e) => setArticle(e.target.value)}
               placeholder="Paste news article or current affairs content..."
               className="min-h-[200px] sm:min-h-[250px] text-sm sm:text-base"
