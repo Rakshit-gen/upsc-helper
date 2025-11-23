@@ -114,22 +114,48 @@ export default function CurrentAffairs() {
               )}
             </Button>
             {generatedArticle && (
-              <div className="p-4 bg-background/50 rounded-lg border border-primary/20 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {generatedArticle.category}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">{generatedArticle.date}</span>
+              <Card className="bg-background/80 border-primary/30">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="secondary" className="text-xs">
+                        {generatedArticle.category}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">{generatedArticle.date}</span>
+                    </div>
                   </div>
-                </div>
-                <h3 className="font-semibold text-sm sm:text-base text-primary">
-                  {generatedArticle.title}
-                </h3>
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {generatedArticle.article.substring(0, 150)}...
-                </p>
-              </div>
+                  <h3 className="font-semibold text-sm sm:text-base text-primary">
+                    {generatedArticle.title}
+                  </h3>
+                  {generatedArticle.keyPoints && generatedArticle.keyPoints.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">Key Points:</p>
+                      <ul className="space-y-1.5">
+                        {generatedArticle.keyPoints.slice(0, 5).map((point: string, idx: number) => (
+                          <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
+                            <span className="text-primary mt-1">•</span>
+                            <span className="flex-1">{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {generatedArticle.keyPoints.length > 5 && (
+                        <p className="text-xs text-muted-foreground italic">
+                          + {generatedArticle.keyPoints.length - 5} more points...
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      {generatedArticle.article.split('\n').slice(0, 3).map((line: string, idx: number) => (
+                        <p key={idx} className="flex items-start gap-2">
+                          <span className="text-primary mt-1">•</span>
+                          <span>{line.trim()}</span>
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             )}
           </CardContent>
         </Card>
