@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CheckCircle2, Save } from 'lucide-react';
+import { CheckCircle2, Save, FileText, Brain, HelpCircle, Copy, CheckCircle, BookOpen, Lightbulb } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 export default function Topics() {
   const [content, setContent] = useState('');
@@ -16,6 +17,8 @@ export default function Topics() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [topic, setTopic] = useState('');
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
 
   const processContent = async () => {
     setLoading(true);
@@ -61,6 +64,26 @@ export default function Topics() {
     setSaving(false);
   };
 
+  const toggleCard = (idx: number) => {
+    const newFlipped = new Set(flippedCards);
+    if (newFlipped.has(idx)) {
+      newFlipped.delete(idx);
+    } else {
+      newFlipped.add(idx);
+    }
+    setFlippedCards(newFlipped);
+  };
+
+  const copyToClipboard = async (text: string, idx: number) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIndex(idx);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  };
+
   return (
     <div className="w-full max-w-full overflow-x-hidden">
       <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 md:mb-8">Topic Breakdown</h1>
@@ -95,39 +118,82 @@ export default function Topics() {
         {result && (
           <Card className="w-full">
             <CardHeader>
-              <CardTitle className="text-base sm:text-lg md:text-xl">Generated Content</CardTitle>
+              <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2">
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                Generated Content
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="notes">
-                <TabsList className="grid w-full grid-cols-3 text-[10px] xs:text-xs sm:text-sm">
-                  <TabsTrigger value="notes" className="text-[10px] xs:text-xs sm:text-sm px-1 sm:px-3">Notes</TabsTrigger>
-                  <TabsTrigger value="flashcards" className="text-[10px] xs:text-xs sm:text-sm px-1 sm:px-3">Flashcards</TabsTrigger>
-                  <TabsTrigger value="quiz" className="text-[10px] xs:text-xs sm:text-sm px-1 sm:px-3">Quiz</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3 text-[10px] xs:text-xs sm:text-sm mb-4 sm:mb-6">
+                  <TabsTrigger value="notes" className="text-[10px] xs:text-xs sm:text-sm px-1 sm:px-3 flex items-center gap-1 sm:gap-2">
+                    <FileText className="h-3 w-3" />
+                    <span>Notes</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="flashcards" className="text-[10px] xs:text-xs sm:text-sm px-1 sm:px-3 flex items-center gap-1 sm:gap-2">
+                    <Brain className="h-3 w-3" />
+                    <span>Flashcards</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="quiz" className="text-[10px] xs:text-xs sm:text-sm px-1 sm:px-3 flex items-center gap-1 sm:gap-2">
+                    <HelpCircle className="h-3 w-3" />
+                    <span>Quiz</span>
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="notes" className="space-y-3 sm:space-y-4">
                   {result.notes && (
-                    <div className="prose max-w-none w-full max-w-full">
-                      <div className="whitespace-pre-wrap text-xs sm:text-sm break-words max-w-full overflow-x-auto">{result.notes}</div>
-                    </div>
+                    <Card className="bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-950/20 border-blue-200/50 dark:border-blue-800/30">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                            <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            Structured Notes
+                          </CardTitle>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyToClipboard(result.notes, -1)}
+                            className="h-7 w-7 p-0"
+                          >
+                            {copiedIndex === -1 ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="prose prose-sm dark:prose-invert max-w-none w-full">
+                          <div className="whitespace-pre-wrap text-xs sm:text-sm break-words max-w-full overflow-x-auto leading-relaxed">
+                            {result.notes}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   )}
                 </TabsContent>
 
-                <TabsContent value="flashcards" className="space-y-3 sm:space-y-4">
+                <TabsContent value="flashcards" className="space-y-4 sm:space-y-6">
                   {result.flashcards && result.flashcards.length > 0 && (
-                    <div className="flex items-center justify-between mb-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
-                      <div>
-                        <p className="text-xs sm:text-sm font-medium">
-                          {result.flashcards.length} flashcard{result.flashcards.length !== 1 ? 's' : ''} generated
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Save them to use in Revision System
-                        </p>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-lg border border-primary/20">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                          <Brain className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm sm:text-base font-semibold">
+                            {result.flashcards.length} Flashcard{result.flashcards.length !== 1 ? 's' : ''} Generated
+                          </p>
+                          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                            Click cards to flip • Save to use in Revision System
+                          </p>
+                        </div>
                       </div>
                       <Button
                         onClick={saveFlashcards}
                         disabled={saving || saved}
-                        className="text-xs sm:text-sm"
+                        className="text-xs sm:text-sm w-full sm:w-auto"
                         size="sm"
                       >
                         {saved ? (
@@ -144,28 +210,143 @@ export default function Topics() {
                       </Button>
                     </div>
                   )}
-                  {result.flashcards?.map((card: any, idx: number) => (
-                    <div key={idx} className="border rounded p-3 sm:p-4 hover:border-primary/50 transition-colors">
-                      <p className="font-semibold mb-2 text-xs sm:text-sm break-words">Q: {card.question}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground break-words">A: {card.answer}</p>
-                    </div>
-                  ))}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                    {result.flashcards?.map((card: any, idx: number) => {
+                      const isFlipped = flippedCards.has(idx);
+                      return (
+                        <div
+                          key={idx}
+                          className="relative group cursor-pointer"
+                          onClick={() => toggleCard(idx)}
+                        >
+                          <div 
+                            className="relative h-[200px] sm:h-[220px]"
+                            style={{ perspective: '1000px' }}
+                          >
+                            <div
+                              className={`relative w-full h-full transition-transform duration-500`}
+                              style={{
+                                transformStyle: 'preserve-3d',
+                                transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                              }}
+                            >
+                              {/* Front of card */}
+                              <div
+                                className="absolute inset-0 rounded-xl border-2 p-4 sm:p-5 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30 flex flex-col justify-center items-center text-center"
+                                style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
+                              >
+                                <div className="absolute top-3 right-3">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {idx + 1}
+                                  </Badge>
+                                </div>
+                                <div className="flex-1 flex items-center justify-center">
+                                  <div>
+                                    <HelpCircle className="h-8 w-8 sm:h-10 sm:w-10 text-primary/60 mx-auto mb-3" />
+                                    <p className="text-sm sm:text-base font-semibold text-foreground break-words px-2">
+                                      {card.question}
+                                    </p>
+                                  </div>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2">Click to reveal answer</p>
+                              </div>
+                              
+                              {/* Back of card */}
+                              <div
+                                className="absolute inset-0 rounded-xl border-2 p-4 sm:p-5 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950/30 dark:to-blue-950/30 border-green-300/50 dark:border-green-700/50 flex flex-col"
+                                style={{ 
+                                  backfaceVisibility: 'hidden', 
+                                  WebkitBackfaceVisibility: 'hidden',
+                                  transform: 'rotateY(180deg)',
+                                }}
+                              >
+                                <div className="absolute top-3 right-3">
+                                  <Badge variant="secondary" className="text-xs bg-green-100 dark:bg-green-900">
+                                    {idx + 1}
+                                  </Badge>
+                                </div>
+                                <div className="flex-1">
+                                  <div className="mb-3">
+                                    <p className="text-xs font-medium text-muted-foreground mb-1">Question:</p>
+                                    <p className="text-xs sm:text-sm text-foreground/70 break-words">{card.question}</p>
+                                  </div>
+                                  <div className="border-t pt-3">
+                                    <p className="text-xs font-medium text-green-700 dark:text-green-400 mb-2">Answer:</p>
+                                    <p className="text-sm sm:text-base font-medium text-foreground break-words">
+                                      {card.answer}
+                                    </p>
+                                  </div>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2 text-center">Click to flip back</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </TabsContent>
 
-                <TabsContent value="quiz" className="space-y-3 sm:space-y-4">
-                  {result.quiz?.map((q: any, idx: number) => (
-                    <div key={idx} className="border rounded p-3 sm:p-4">
-                      <p className="font-semibold mb-2 sm:mb-3 text-xs sm:text-sm break-words">{idx + 1}. {q.question}</p>
-                      <div className="space-y-1 sm:space-y-2">
-                        {q.options.map((opt: string, optIdx: number) => (
-                          <div key={optIdx} className="text-xs sm:text-sm break-words">
-                            {String.fromCharCode(65 + optIdx)}. {opt}
+                <TabsContent value="quiz" className="space-y-4 sm:space-y-5">
+                  {result.quiz?.map((q: any, idx: number) => {
+                    const correctIndex = q.correct.charCodeAt(0) - 65;
+                    return (
+                      <Card key={idx} className="w-full border-2 hover:border-primary/30 transition-colors">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-3 flex-1">
+                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                <span className="text-sm font-bold text-primary">{idx + 1}</span>
+                              </div>
+                              <CardTitle className="text-sm sm:text-base flex-1 break-words pt-1">
+                                {q.question}
+                              </CardTitle>
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                      <p className="text-xs sm:text-sm text-primary mt-2 sm:mt-3 break-words">Correct: {q.correct}</p>
-                    </div>
-                  ))}
+                        </CardHeader>
+                        <CardContent className="space-y-2 sm:space-y-3">
+                          <div className="space-y-2">
+                            {q.options.map((opt: string, optIdx: number) => {
+                              const isCorrect = optIdx === correctIndex;
+                              const optionLetter = String.fromCharCode(65 + optIdx);
+                              return (
+                                <div
+                                  key={optIdx}
+                                  className={`flex items-start gap-3 p-3 rounded-lg border-2 transition-all ${
+                                    isCorrect
+                                      ? 'bg-green-50 dark:bg-green-950/30 border-green-300 dark:border-green-700'
+                                      : 'bg-muted/30 border-border hover:border-primary/30'
+                                  }`}
+                                >
+                                  <div
+                                    className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                      isCorrect
+                                        ? 'bg-green-500 text-white'
+                                        : 'bg-muted text-muted-foreground'
+                                    }`}
+                                  >
+                                    {optionLetter}
+                                  </div>
+                                  <div className="flex-1 flex items-center justify-between">
+                                    <p className="text-xs sm:text-sm break-words flex-1">{opt}</p>
+                                    {isCorrect && (
+                                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0 ml-2" />
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="mt-3 pt-3 border-t flex items-center gap-2">
+                            <Lightbulb className="h-4 w-4 text-primary flex-shrink-0" />
+                            <p className="text-xs sm:text-sm text-muted-foreground">
+                              Correct answer: <span className="font-semibold text-primary">{q.correct}</span>
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </TabsContent>
               </Tabs>
             </CardContent>
