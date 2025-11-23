@@ -15,6 +15,7 @@ import {
   PenTool,
   BarChart3,
   X,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -29,6 +30,7 @@ const navItems = [
   { href: '/explain', label: 'Explain Mode', icon: Lightbulb },
   { href: '/revision', label: 'Revision System', icon: Brain },
   { href: '/essay', label: 'Essay & Ethics', icon: PenTool },
+  { href: '/motivation', label: 'Motivation', icon: Sparkles },
   { href: '/progress', label: 'Progress Tracking', icon: BarChart3 },
 ];
 
