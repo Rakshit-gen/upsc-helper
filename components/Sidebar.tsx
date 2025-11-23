@@ -92,7 +92,6 @@ const navGroups: NavGroup[] = [
         label: 'Test Engine', 
         icon: FileText,
         description: 'Practice tests',
-        badge: 'New'
       },
       { 
         href: '/pyq', 
