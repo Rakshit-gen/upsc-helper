@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CheckCircle2, Save, FileText, Brain, HelpCircle, Copy, CheckCircle, BookOpen, Lightbulb } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { MathRenderer } from '@/components/MathRenderer';
 
 export default function Topics() {
   const [content, setContent] = useState('');
@@ -165,8 +166,8 @@ export default function Topics() {
                       </CardHeader>
                       <CardContent>
                         <div className="prose prose-sm dark:prose-invert max-w-none w-full">
-                          <div className="whitespace-pre-wrap text-xs sm:text-sm break-words max-w-full overflow-x-auto leading-relaxed">
-                            {result.notes}
+                          <div className="text-xs sm:text-sm break-words max-w-full overflow-x-auto leading-relaxed">
+                            <MathRenderer content={result.notes} />
                           </div>
                         </div>
                       </CardContent>
